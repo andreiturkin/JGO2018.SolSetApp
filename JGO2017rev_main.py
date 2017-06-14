@@ -7,7 +7,6 @@ matplotlib.use('TkAgg')
 import numpy as np
 
 # A Parallel Robot
-from JGO2017rev_Example1 import Example1
 from JGO2017rev_Example2 import Example2
 
 def GetWorkspace2(iDelta, ShowRes=False):
@@ -42,7 +41,7 @@ if __name__ == '__main__':
     deltas = [0.5, 0.3, 0.2, 0.15, 0.1, 0.07, 0.06, 0.035, 0.03, 0.018, 0.01, 0.009]
 
     # Get the workspace
-    GetWorkspace2(0.05, True)
+    GetWorkspace2(0.1, True)
 
     print'\n#############################################################################'
     print'                                 Done!                                         '
