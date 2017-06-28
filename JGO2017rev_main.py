@@ -8,6 +8,7 @@ import numpy as np
 
 # A Parallel Robot
 from JGO2017rev_Example2 import Example2
+from JGO2017rev_Example3 import Example3
 
 def GetWorkspace2(iDelta, ShowRes=False):
     # Define a system of inequalities
@@ -32,6 +33,29 @@ def GetWorkspace2(iDelta, ShowRes=False):
                                                            datetime.datetime.now().minute,\
                                                            datetime.datetime.now().second,\
                                                            iDelta), AddRings=False)
+def GetWorkspace3(iDelta, ShowRes=False):
+    # Define a system of inequalities
+    bIntl = False
+    System = Example3(iDelta, ShowCovPrc=False)
+    fName = './Dumps/Example3_Tree_{}_lipz.p'.format(iDelta)
+    print 'The results for {}:'.format(iDelta)
+    if System.isFileExist(fName):
+        print 'A file with a precalculated solution was found: {}'.format(fName)
+        System.LoadSolution(fName)
+    else:
+        maxLevels = 64
+        t = timeit.Timer(lambda: System.getSolution(maxLevels))
+        exectime = t.timeit(number=1)
+        print 'Execution time: {}\n'.format(exectime)
+        print '...Saving Data to {}'.format(fName)
+        System.SaveSolution(fName)
+
+    if ShowRes:
+        System.SaveResults('./Images/Example3_{0}__{1:02d}_{2:02d}_{3:02d}_covering_{4}.pdf'.format(datetime.date.today(), \
+                                                           datetime.datetime.now().hour,\
+                                                           datetime.datetime.now().minute,\
+                                                           datetime.datetime.now().second,\
+                                                           iDelta), AddRings=False)
 
 if __name__ == '__main__':
     print'\n#############################################################################'
@@ -41,7 +65,8 @@ if __name__ == '__main__':
     deltas = [0.5, 0.3, 0.2, 0.15, 0.1, 0.07, 0.06, 0.035, 0.03, 0.018, 0.01, 0.009]
 
     # Get the workspace
-    GetWorkspace2(0.1, True)
+    # GetWorkspace2(0.1, True)
+    GetWorkspace3(0.1, True)
 
     print'\n#############################################################################'
     print'                                 Done!                                         '
