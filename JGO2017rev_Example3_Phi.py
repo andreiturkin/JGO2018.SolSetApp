@@ -23,16 +23,12 @@ import casadi
 #   y_bi            -5sqrt(3)/3     -5sqrt(3)/3     10sqrt(3)/3
 #   rho_min         12              12              12
 #   rho_max         27              27              27
-#   theta_ai_min    10              0               0
-#   theta_ai_max    350             300             360
-#   theta_bi_min    10              30              0
-#   theta_bi_max    340             360             330
 #-----------------------------------------------------------------------
 #   * see Gosselin C., Jean M. - Determination of the workspace of planar
 #   parallel manipulators with joint limits.
 ########################################################################
-#
-# angle = theta_ai - theta_bi + pi
+# For the constant angle:
+# angle = 10
 #
 
 class Phi(object):
