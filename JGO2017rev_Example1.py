@@ -1,89 +1,150 @@
-from numpy import sin, cos
-# Pi
-from math import pi
-#Plotting
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+from math import sqrt
 
-from JGO2017rev_NUC import CoveringTree, Box
+from JGO2017rev_NUC import Box, CoveringTree
 from JGO2017rev_Plotting import PlottingTree
+from JGO2017rev_GlobOpt import GlobalOptimization
 
-class Example1(CoveringTree, PlottingTree):
-############################################################################################
-# Public Methods
-############################################################################################
-    def __init__(self, idelta=0, ShowCovPrc=False, bIntl=True):
-        # Define the Initial Rectangle P
-        side = 2*pi
-        iBox = Box((pi/2.0, -pi), (side, side))
-        pBox = Box((pi/2.0, -pi), (side, side))
+def phi(x):
+    def g2(x):
+        return x[0]**2.0 + x[1]**2.0 - 1
 
-        # Call the following initialization routines
-        CoveringTree.__init__(self, iBox, idelta, ShowCovPrc, 0.0)
-        PlottingTree.__init__(self, pBox, ShowCovPrc)
+    def g1(x):
+        return 0.999**2 - x[0]**2.0 - x[1]**2.0
+    return max(g1(x), g2(x))
+
+def getLipVal(iBox):
+    bounds = iBox.getBounds()
+    xmin = bounds[0][0]
+    xmax = bounds[0][1]
+    ymin = bounds[1][0]
+    ymax = bounds[1][1]
+
+    return 2*sqrt(max(abs(xmin), abs(xmax))**2 + max(abs(ymin), abs(ymax))**2)
+
+class Example1_GlobOpt(CoveringTree, PlottingTree):
+    def __init__(self, idelta=0, ShowCovPrc=False):
+        # The Initial Rectangle P definition
+        corner = -1.5
+        side = 3.0
+
+        # The algorithm parameters initialization
+        self.delta = idelta
+        self.eps = (getLipVal(Box((corner, corner), (side, side)))*idelta)/2.0
+
+        # The CoveringTree class constructor
+        CoveringTree.__init__(self, Box((corner, corner), (side, side)), self.delta, ShowCovPrc, self.eps)
+        PlottingTree.__init__(self, Box((corner, corner), (side, side)), ShowCovPrc=ShowCovPrc)
 
     def SaveResults(self, fileName, AddRings):
-        super(Example1, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings)
+        super(Example1_GlobOpt, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings)
 
     def SaveSolution(self, fName):
-        super(Example1, self).SaveSolution(fName)
+        super(Example1_GlobOpt, self).SaveSolution(fName)
 
     def isFileExist(self, fName):
-        return super(Example1, self).isFileExist(fName)
+        return super(Example1_GlobOpt, self).isFileExist(fName)
 
     def LoadSolution(self, fName):
-        super(Example1, self).LoadSolution(fName)
+        super(Example1_GlobOpt, self).LoadSolution(fName)
 
-############################################################################################
-# Private Methods
-############################################################################################
+    def getResProcessedLevels(self):
+        return super(Example1_GlobOpt, self).getResProcessedLevels()
 
-    ########################################################################
-    #                               Rho Constraints
-    ########################################################################
-    @staticmethod
-    def phi(x):
-        def g1(x):
-            return sin(x[0])
+    def getResIterations(self):
+        return super(Example1_GlobOpt, self).getResIterations()
 
-        def g2(x):
-            return -cos(x[1])
+    def AdditionalPlotting(self, ax):
+        self.drawCircle((0,0), 1)
+        self.drawCircle((0,0), 0.999)
 
-        return max(g1(x), g2(x))
+    def getMinMaxVal(self, iBox):
+        gopt = GlobalOptimization(phi, getLipVal, self.eps)
+        return gopt.getMinVal(iBox),\
+               gopt.getMaxVal(iBox)
 
-    def getPhi(self, iBox):
+class Example1_AppxGlobL(CoveringTree, PlottingTree):
+    def __init__(self, idelta=0, ShowCovPrc=False):
+        #Define the Initial Rectangle P
+        corner = -1.5
+        side = 3.0
+        self.__L = getLipVal(Box((corner, corner), (side, side)))
+        CoveringTree.__init__(self, Box((corner, corner), (side, side)), idelta)
+        PlottingTree.__init__(self, Box((corner, corner), (side, side)), ShowCovPrc=ShowCovPrc)
+
+    def getResProcessedLevels(self):
+        return super(Example1_AppxGlobL, self).getResProcessedLevels()
+
+    def getResIterations(self):
+        return super(Example1_AppxGlobL, self).getResIterations()
+
+    def SaveResults(self, fileName, AddRings):
+        super(Example1_AppxGlobL, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings)
+
+    def SaveSolution(self, fName):
+        super(Example1_AppxGlobL, self).SaveSolution(fName)
+
+    def isFileExist(self, fName):
+        return super(Example1_AppxGlobL, self).isFileExist(fName)
+
+    def LoadSolution(self, fName):
+        super(Example1_AppxGlobL, self).LoadSolution(fName)
+
+    def AdditionalPlotting(self, ax):
+        #Example 1:
+        self.drawCircle((0,0), 1)
+        self.drawCircle((0,0), 0.999)
+
+    def getMinMaxVal(self, iBox):
         bounds = iBox.getBounds()
         xmin = bounds[0][0]
         xmax = bounds[0][1]
         ymin = bounds[1][0]
         ymax = bounds[1][1]
 
-        cphival = self.phi(((xmin+xmax)/2.0, (ymin+ymax)/2.0))
-        L = 1.0
-        phiMin = cphival - (L/2.0)*iBox.getDiam()
-        phiMax = cphival + (L/2.0)*iBox.getDiam()
+        phival = phi(((xmin+xmax)/2.0, (ymin+ymax)/2.0))
+        return phival - (self.__L/2.0)*iBox.getDiam(), \
+               phival + (self.__L/2.0)*iBox.getDiam()
 
-        return phiMin, phiMax
+class Example1_AppxLocL(CoveringTree, PlottingTree):
 
-############################################################################################
-# Abstract Methods
-############################################################################################
+    def __init__(self, idelta=0, ShowCovPrc=False):
+        #Define the Initial Rectangle P
+        corner = -1.5
+        side = 3.0
 
-    ########################################################################################
-    # CoveringTree
-    ########################################################################################
-    def getMinMaxVal(self, iBox):
+        CoveringTree.__init__(self, Box((corner, corner), (side, side)), idelta)
+        PlottingTree.__init__(self, Box((corner, corner), (side, side)), ShowCovPrc=ShowCovPrc)
 
-        phiMin, phiMax = self.getPhi(iBox)
-        # return minimum and maximum values
-        return phiMin, phiMax
+    def getResProcessedLevels(self):
+        return super(Example1_AppxLocL, self).getResProcessedLevels()
 
-    ########################################################################################
-    # PlottingTree
-    ########################################################################################
+    def getResIterations(self):
+        return super(Example1_AppxLocL, self).getResIterations()
+
+    def SaveResults(self, fileName, AddRings):
+        super(Example1_AppxLocL, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings)
+
+    def SaveSolution(self, fName):
+        super(Example1_AppxLocL, self).SaveSolution(fName)
+
+    def isFileExist(self, fName):
+        return super(Example1_AppxLocL, self).isFileExist(fName)
+
+    def LoadSolution(self, fName):
+        super(Example1_AppxLocL, self).LoadSolution(fName)
+
     def AdditionalPlotting(self, ax):
-        return
+        self.drawCircle((0,0), 1)
+        self.drawCircle((0,0), 0.999)
 
-############################################################################################
-# !Abstract Methods
-############################################################################################
+    def getMinMaxVal(self, iBox):
+        bounds = iBox.getBounds()
+        xmin = bounds[0][0]
+        xmax = bounds[0][1]
+        ymin = bounds[1][0]
+        ymax = bounds[1][1]
+
+        L = getLipVal(iBox)
+        phival = phi(((xmin+xmax)/2.0, (ymin+ymax)/2.0))
+        return phival - (L/2.0)*iBox.getDiam(), \
+               phival + (L/2.0)*iBox.getDiam()

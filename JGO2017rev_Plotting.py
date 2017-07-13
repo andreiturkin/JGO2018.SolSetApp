@@ -24,9 +24,10 @@ class PlottingTree(object):
 # Constructor
 ############################################################################################
     __metaclass__ = abc.ABCMeta
-    def __init__(self, iBox, ShowCovPrc):
+    def __init__(self, iBox, iAngle=0.0, ShowCovPrc=False):
+        self.__pangle = iAngle
         if ShowCovPrc:
-            self.InitPlottingFacilities(iBox=iBox, Prj2D=True, idxs=[2,], vals=[(10.0/180.0)*pi,])
+            self.InitPlottingFacilities(iBox=iBox, Prj2D=True, idxs=[2,], vals=[self.__pangle])
 
 ########################################################################################
 # Plotting
@@ -110,37 +111,6 @@ class PlottingTree(object):
         a = interval[iBox.getCorner()[self.indxs[0]], iBox.getCorner()[self.indxs[0]] + iBox.getSides()[self.indxs[0]]]
         if self.vals[0] in a:
             edgeColor, lineStyle, lineWidth, Alpha, Fill = self.__getBoxFeatures(inQI, inQE)
-
-            # call getCoveringAccuracy from _NUC.py
-            if iBox.getDiam() <= self.getCoverigAccuracy() and edgeColor == 'red':
-                #call getCoveringAccuracy from _ExampleX_Phi.py
-                phiMin, phiMax, resMin, resMax = self.GlobOptExt(iBox)
-                if phiMax < 0.0:
-                    #good
-                    edgeColor = 'black'
-                    lineStyle = 'solid'
-                    lineWidth = 0.3
-                    Alpha = 0.3
-
-                if phiMin > 0.0:
-                    #bad
-                    edgeColor = 'green'
-                    lineStyle = 'solid'
-                    lineWidth = 0.3
-                    Alpha = None
-
-                # if edgeColor == 'green' or edgeColor == 'black':
-                #     if 'getIntlRes' in dir(self):
-                #         bounds = iBox.getBounds()
-                #         xmin = bounds[0][0]
-                #         xmax = bounds[0][1]
-                #         ymin = bounds[1][0]
-                #         ymax = bounds[1][1]
-                #         zmin = bounds[2][0]
-                #         zmax = bounds[2][1]
-                #         inx = (interval[xmin, xmax], interval[ymin, ymax], interval[zmin, zmax])
-                #         saveDataToFile('./Images/changedBoxes_0.2.json', inx, self.getIntlRes(iBox), resMin, resMax)
-
             self.__drawBox(iBox, edgeColor, lineStyle, lineWidth, Alpha, Fill)
 
     def __drawBox3D(self, iBox, fillIt, inQI=False, inQE=True):
@@ -168,27 +138,21 @@ class PlottingTree(object):
                                             datetime.datetime.now().minute,\
                                             datetime.datetime.now().second),\
                                             AddRings=False):
-        print 'Saving the image...'
         if not hasattr(self, '__fig'):
-            self.InitPlottingFacilities(iTree.search_nodes(name='0')[0].Box)
+            self.InitPlottingFacilities(iTree.search_nodes(name='0')[0].Box, Prj2D=True, idxs=[2,], vals=[self.__pangle])
         else:
             #Get information on the initial box
             bnds = iTree.search_nodes(name='0')[0].Box.getBounds()
             self.__ax.axis([bnds[0][0], bnds[0][1], bnds[1][0], bnds[1][1]])
 
-        print 'Drawing rectangles...'
         for leaf in iTree.iter_leaves():
             #Draw the rectangle with edges
             self.drawBox(leaf.Box, leaf.Inrange, leaf.inQI, leaf.inQE)
 
         if AddRings:
-            print 'Additional Plotting...'
             # Call an abstract method
             self.AdditionalPlotting(self.__ax)
-        print 'Drawing the Figure...'
         plt.draw()
         plt.pause(1)
         #Save the result
-        print 'Saving an image...'
         self.__fig.savefig(fileName, dpi=1600)
-        print 'The image has been saved correctly'

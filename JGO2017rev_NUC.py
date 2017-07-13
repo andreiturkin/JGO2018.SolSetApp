@@ -73,6 +73,9 @@ class CoveringTree(object):
         self.__eps = ieps
         # Show the covering process
         self.__bShow = ShowCovPrc
+        # Number of processed levels of the tree and the number of iterations
+        self.__nLevelsProcessed = None
+        self.__nIterations = None
 
     @abc.abstractmethod
     def getMinMaxVal(self, bounds, diam):
@@ -81,21 +84,21 @@ class CoveringTree(object):
 ############################################################################################
 # Public Members
 ############################################################################################
-    def getCoverigAccuracy(self):
-        return self.__delta
     def getSolution(self, maxLevels):
 
         # Initialize the Root of the Tree and additional variables
         self.__initTree(self.__Xspace)
-        print 'The diameter of the initial box is {}'.format(self.__Xspace.getDiam())
+        # Uncomment if you would like to get info about the initial box
+        # print 'The diameter of the initial box is {}'.format(self.__Xspace.getDiam())
         bExit = False
         nIter = 0
 
         for curLevel in range(0, maxLevels):
             # Get all the rectangles that are on some level of the tree
             curLevelNodes = self.__sTree.get_leaves_by_name(name='{}'.format(curLevel))
-            print 'The {}th layer of boxes with the diameter equals {} is precessed'.format(curLevel, \
-                    curLevelNodes[0].Box.getDiam())
+            # Uncomment if you would like to see the progress of calculation for every level
+            # print 'The {}th layer of boxes with the diameter equals {} is precessed'.format(curLevel, \
+            #         curLevelNodes[0].Box.getDiam())
             # Loop over the rectangles
             for curLevelNode in curLevelNodes:
                 nIter = nIter + 1
@@ -124,11 +127,20 @@ class CoveringTree(object):
             #All of the rectangles could be obtained on the next iterations are too small
             #so break it
             if bExit:
-                print 'Number of levels were processed: {}'.format(curLevel)
-                print 'Number of iterations: {}'.format(nIter)
+                self.__nLevelsProcessed = curLevel
+                self.__nIterations = nIter
                 if self.__bShow:
                     plt.show()
                 break
+
+    def getCoverigAccuracy(self):
+        return self.__delta
+
+    def getResProcessedLevels(self):
+        return self.__nLevelsProcessed
+
+    def getResIterations(self):
+        return self.__nIterations
 
     def getTree(self):
         T = {'iBox': self.__Xspace, 'iDelta': self.__delta,

@@ -1,40 +1,72 @@
-import numpy as np
-from numpy import linalg as la
-import datetime
-# Pi
-from math import pi
+# Math functions and constants
+from math import sqrt, sin, cos, acos, pi
 # Interval analysis
 from interval import interval
-#Plotting
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-#Saving data to files
-import os
-import json
+# Arrays
+import numpy as np
 
 from JGO2017rev_NUC import CoveringTree, Box
 from JGO2017rev_Plotting import PlottingTree
-from JGO2017rev_Example2_Phi import Phi
+# from JGO2017rev_Example3_Phi import Phi
 
-class Example2(CoveringTree, PlottingTree, Phi):
+########################################################################
+#   Table of robot parameters *
+#   i               1               2               3
+#-----------------------------------------------------------------------
+#   x_ai            -15             15              0
+#   y_ai            -5sqrt(3)       -5sqrt(3)       10sqrt(3)
+#   x_bi            -5              5               0
+#   y_bi            -5sqrt(3)/3     -5sqrt(3)/3     10sqrt(3)/3
+#   rho_min         12              12              12
+#   rho_max         27              27              27
+#-----------------------------------------------------------------------
+#   * see Gosselin C., Jean M. - Determination of the workspace of planar
+#   parallel manipulators with joint limits.
+########################################################################
+# For the constant angle:
+# angle = 50
+#
+
+# class Example2(CoveringTree, PlottingTree, Phi):
+class Example2(CoveringTree, PlottingTree):
 ############################################################################################
 # Public Methods
 ############################################################################################
-    def __init__(self, idelta=0, ShowCovPrc=False):
-        # Zoom up the bottom triangle
-        # iBox = Box((-8, -18, (8.0/180.0)*pi), (14, 8, (12.0/180.0)*pi))
-
+    def __init__(self, idelta=0, iangle=(10.0/180.0)*pi, ShowCovPrc=False):
         # Full Range
         # Define the Initial Rectangle P
         corner = -20.0
         side = 40.0
-        iBox = Box((corner, corner, (9.0/180.0)*pi), (side, side, (2.0/180.0)*pi))
-        pBox = Box((corner, corner, (9.0/180.0)*pi), (side, side, (2.0/180.0)*pi))
+        iBox = Box((corner, corner), (side, side))
+        pBox = Box((corner, corner), (side, side))
 
         # Call the following initialization routines
         CoveringTree.__init__(self, iBox, idelta, ShowCovPrc, 0.0)
-        PlottingTree.__init__(self, pBox, ShowCovPrc)
-        Phi.__init__(self)
+        PlottingTree.__init__(self, pBox, iangle, ShowCovPrc)
+        # Phi.__init__(self)
+
+        # Initialize the parameters of the planar parallel robot
+        # A constraints
+        self.__a = []
+        self.__a.append(np.array([-15.0, -5.0*sqrt(3.0)]))
+        self.__a.append(np.array([15.0, -5.0*sqrt(3.0)]))
+        self.__a.append(np.array([0.0, 10.0*sqrt(3.0)]))
+        # B constraints
+        self.__b = []
+        self.__b.append(np.array([-5.0, -5.0*sqrt(3.0)/3.0]))
+        self.__b.append(np.array([5.0, -5.0*sqrt(3.0)/3.0]))
+        self.__b.append(np.array([0.0, 10.0*sqrt(3.0)/3.0]))
+
+        self.__rho = [12.0, 27.0]
+        self.__angle = iangle
+        self.__p = [self.__a[u][0] - self.__b[u][0]*cos(self.__angle) + self.__b[u][1]*sin(self.__angle) for u in [0,1,2]]
+        self.__q = [self.__a[u][1] - self.__b[u][0]*sin(self.__angle) - self.__b[u][1]*cos(self.__angle) for u in [0,1,2]]
+
+    def getResProcessedLevels(self):
+        return super(Example2, self).getResProcessedLevels()
+
+    def getResIterations(self):
+        return super(Example2, self).getResIterations()
 
     def SaveResults(self, fileName, AddRings):
         super(Example2, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings)
@@ -51,6 +83,24 @@ class Example2(CoveringTree, PlottingTree, Phi):
 ############################################################################################
 # Private Methods
 ############################################################################################
+    def getRho(self):
+        return self.__rho
+
+    def getCi(self, angle, i):
+        return self.__a[i] - self.RotL(self.__b[i], angle)
+
+    # Rotate u counterclockwise
+    @staticmethod
+    def RotL(u, a):
+        return np.array([u[0]*cos(a) - u[1]*sin(a), u[0]*sin(a) + u[1]*cos(a)])
+
+    ########################################################################
+    #                               Rho Constraints
+    ########################################################################
+    def gRhoi(self, x, angle, i):
+        u_c1 = self.__a[i]- self.RotL(self.__b[i], angle)
+        rho2i = np.linalg.norm(x-u_c1)**2
+        return np.array([rho2i - self.__rho[1]**2, self.__rho[0]**2 - rho2i])
 
 ############################################################################################
 # Abstract Methods
@@ -60,8 +110,25 @@ class Example2(CoveringTree, PlottingTree, Phi):
     # CoveringTree
     ########################################################################################
     def getMinMaxVal(self, iBox):
+        bounds = iBox.getBounds()
+        xmin = bounds[0][0]
+        xmax = bounds[0][1]
+        ymin = bounds[1][0]
+        ymax = bounds[1][1]
 
-        phiMin, phiMax = self.getPhi(iBox)
+        x = [(xmin+xmax)/2.0, (ymin+ymax)/2.0]
+        flist = ['gRhoi']
+
+        res = [r for f in flist for i in [0, 1, 2] for r in getattr(self, f)(x, self.__angle, i)]
+        phi = max(res)
+        # Lc = self.CasADi_getLipConst(iBox)
+        Lg = [2.0*sqrt(max((xmin-self.__p[u])**2, (xmax-self.__p[u])**2) + \
+                       max((ymin-self.__q[u])**2, (ymax-self.__q[u])**2)) \
+                       for u in [0, 1, 2]]
+        L = max(Lg)
+        # L = Lc
+        phiMin = phi - (float(L)/2.0)*iBox.getDiam()
+        phiMax = phi + (float(L)/2.0)*iBox.getDiam()
         # return minimum and maximum values
         return phiMin, phiMax
 
@@ -70,27 +137,9 @@ class Example2(CoveringTree, PlottingTree, Phi):
     ########################################################################################
     def AdditionalPlotting(self, ax):
         ci = [self.getCi(self.vals[0], i) for i in [0, 1, 2]]
-
         for c in ci:
             for r in self.getRho():
                 self.drawCircle(c, r)
-
-        theta_a_bounds = self.getTheta_a_Bounds()
-        theta_b_bounds = self.getTheta_b_Bounds()
-        theta_a_intl = [interval[theta_a_bounds[0][i], theta_a_bounds[1][i]] for i in [0, 1, 2]]
-        theta_b_intl = [interval[theta_b_bounds[0][i] + self.vals[0] - pi,\
-                                 theta_b_bounds[1][i] + self.vals[0] - pi] for i in [0, 1, 2]]
-
-        psi = [(theta_b_intl[0][0][0], theta_b_intl[0][0][1]),\
-               (theta_b_intl[1][0][0], theta_b_intl[1][0][1]),\
-               (theta_b_intl[2][0][0], theta_b_intl[2][0][1])]
-
-        for idx, c in enumerate(ci):
-            for r in self.getRho():
-                self.drawArc(c, r, psi[idx])
-
-        for idx, c in enumerate(ci):
-            self.drawLine(c, self.getRho(), psi[idx])
         return
 
 ############################################################################################
