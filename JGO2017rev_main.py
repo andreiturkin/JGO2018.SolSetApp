@@ -85,7 +85,7 @@ def JGOExample2(iDelta, ShowRes=False, Zoom=False, ZoomBox=None):
 def JGOExample3(iDelta, iAngle, ShowRes=False):
     # Define a system of inequalities
     System = Example3(idelta=iDelta, iangle=iAngle, ShowCovPrc=False)
-    fName = './Dumps/Example2_{}_{}.p'.format(iDelta, round(iAngle*180.0/pi))
+    fName = './Dumps/Example3_{}_{}.p'.format(iDelta, round(iAngle*180.0/pi))
     # print 'The results for {}:'.format(iDelta)
     exectime = None
     if System.isFileExist(fName):
@@ -97,7 +97,7 @@ def JGOExample3(iDelta, iAngle, ShowRes=False):
         System.SaveSolution(fName)
 
     if ShowRes:
-        System.SaveResults('./Images/Example2_Delta_{}_Angle_{}.pdf'.format(iDelta, round(iAngle*180.0/pi)), AddRings=True)
+        System.SaveResults('./Images/Example3_Delta_{}_Angle_{}.pdf'.format(iDelta, round(iAngle*180.0/pi)), AddRings=True)
     return ['{}'.format(iDelta), '{}'.format(System.getResIterations()), '{}'.format(round(exectime,4))] \
            if exectime else ['{}'.format(iDelta), 'Unknown', 'Unknown']
 
