@@ -35,8 +35,8 @@ class Example1_GlobOpt(CoveringTree, PlottingTree):
         CoveringTree.__init__(self, Box((corner, corner), (side, side)), self.delta, ShowCovPrc, self.eps)
         PlottingTree.__init__(self, Box((corner, corner), (side, side)), ShowCovPrc=ShowCovPrc)
 
-    def SaveResults(self, fileName, AddRings):
-        super(Example1_GlobOpt, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings)
+    def SaveResults(self, fileName, AddRings, Zoom=False, ZoomBox=None):
+        super(Example1_GlobOpt, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings, Zoom=Zoom, ZoomBox=ZoomBox)
 
     def SaveSolution(self, fName):
         super(Example1_GlobOpt, self).SaveSolution(fName)
@@ -77,8 +77,8 @@ class Example1_AppxGlobL(CoveringTree, PlottingTree):
     def getResIterations(self):
         return super(Example1_AppxGlobL, self).getResIterations()
 
-    def SaveResults(self, fileName, AddRings):
-        super(Example1_AppxGlobL, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings)
+    def SaveResults(self, fileName, AddRings, Zoom=False, ZoomBox=None):
+        super(Example1_AppxGlobL, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings, Zoom=Zoom, ZoomBox=ZoomBox)
 
     def SaveSolution(self, fName):
         super(Example1_AppxGlobL, self).SaveSolution(fName)
@@ -121,8 +121,8 @@ class Example1_AppxLocL(CoveringTree, PlottingTree):
     def getResIterations(self):
         return super(Example1_AppxLocL, self).getResIterations()
 
-    def SaveResults(self, fileName, AddRings):
-        super(Example1_AppxLocL, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings)
+    def SaveResults(self, fileName, AddRings, Zoom=False, ZoomBox=None):
+        super(Example1_AppxLocL, self).saveResultAsImage(self.getTree()['Tree'], fileName, AddRings=AddRings, Zoom=Zoom, ZoomBox=ZoomBox)
 
     def SaveSolution(self, fName):
         super(Example1_AppxLocL, self).SaveSolution(fName)

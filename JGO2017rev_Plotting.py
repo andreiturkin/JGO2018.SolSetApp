@@ -137,7 +137,7 @@ class PlottingTree(object):
                                             datetime.datetime.now().hour,\
                                             datetime.datetime.now().minute,\
                                             datetime.datetime.now().second),\
-                                            AddRings=False):
+                                            AddRings=False, Zoom=False, ZoomBox=None):
         if not hasattr(self, '__fig'):
             self.InitPlottingFacilities(iTree.search_nodes(name='0')[0].Box, Prj2D=True, idxs=[2,], vals=[self.__pangle])
         else:
@@ -145,9 +145,28 @@ class PlottingTree(object):
             bnds = iTree.search_nodes(name='0')[0].Box.getBounds()
             self.__ax.axis([bnds[0][0], bnds[0][1], bnds[1][0], bnds[1][1]])
 
-        for leaf in iTree.iter_leaves():
-            #Draw the rectangle with edges
-            self.drawBox(leaf.Box, leaf.Inrange, leaf.inQI, leaf.inQE)
+        if Zoom and ZoomBox and iTree.search_nodes(name='0')[0].Box.getDim()==2:
+            bnds = ZoomBox.getBounds()
+            zoomxmin = bnds[0][0]
+            zoomxmax = bnds[0][1]
+            zoomymin = bnds[1][0]
+            zoomymax = bnds[1][1]
+            self.__ax.axis([bnds[0][0], bnds[0][1], bnds[1][0], bnds[1][1]])
+            for leaf in iTree.iter_leaves():
+                bnds = leaf.Box.getBounds()
+                sides = leaf.Box.getSides()
+                xmin = bnds[0][0]
+                xmax = bnds[0][1]
+                ymin = bnds[1][0]
+                ymax = bnds[1][1]
+                if ((zoomxmin-sides[0] <= xmin) and (zoomxmax+sides[0]  >= xmax) and \
+                   (zoomymin-sides[1] <= ymin) and (zoomymax+sides[1] >= ymax)):
+                    #Draw the rectangle with edges
+                    self.drawBox(leaf.Box, leaf.Inrange, leaf.inQI, leaf.inQE)
+        else:
+            for leaf in iTree.iter_leaves():
+                #Draw the rectangle with edges
+                self.drawBox(leaf.Box, leaf.Inrange, leaf.inQI, leaf.inQE)
 
         if AddRings:
             # Call an abstract method
@@ -156,3 +175,5 @@ class PlottingTree(object):
         plt.pause(1)
         #Save the result
         self.__fig.savefig(fileName, dpi=1600)
+        plt.close(self.__fig)
+        del self.__fig
